@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>強化学習ドキュメント — ネズミ vs チーズ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#08080d;
+  --surface:#0e0e16;
+  --surface2:#12121c;
+  --border:#1c1c2e;
+  --border-light:#2a2a42;
+  --green:#39ff14;
+  --cyan:#00f0ff;
+  --pink:#ff2d6b;
+  --amber:#ffb830;
+  --purple:#b14eff;
+  --text:#d0d0dc;
+  --text-dim:#6a6a82;
+  --text-bright:#eeeef4;
+  --code-bg:#0a0a14;
+}
+
+html{
+  scroll-behavior:smooth;
+  background:var(--bg);
+  color:var(--text);
+}
+
+body{
+  font-family:'Noto Sans JP','IBM Plex Mono',sans-serif;
+  font-weight:400;
+  line-height:1.85;
+  font-size:15px;
+}
+
+/* CRT scanline overlay */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,0.008) 0px,rgba(255,255,255,0.008) 1px,transparent 1px,transparent 3px);
+  pointer-events:none;z-index:9999;
+}
+
+/* === NAV === */
+.nav{
+  position:fixed;top:0;left:0;
+  width:260px;height:100vh;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:28px 20px;
+  overflow-y:auto;
+  z-index:100;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+.nav-title{
+  font-family:'Press Start 2P',monospace;
+  font-size:10px;
+  color:var(--green);
+  text-shadow:0 0 8px rgba(57,255,20,0.4);
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+.nav-sub{
+  font-size:11px;
+  color:var(--text-dim);
+  margin-bottom:24px;
+  padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.nav-section{
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  color:var(--amber);
+  letter-spacing:1px;
+  margin:16px 0 8px;
+}
+.nav a{
+  display:block;
+  padding:5px 10px;
+  font-size:12.5px;
+  color:var(--text-dim);
+  text-decoration:none;
+  border-radius:3px;
+  transition:all 0.15s;
+  margin-bottom:2px;
+  border-left:2px solid transparent;
+}
+.nav a:hover{
+  color:var(--cyan);
+  background:rgba(0,240,255,0.04);
+  border-left-color:rgba(0,240,255,0.3);
+}
+.nav a.active{
+  color:var(--cyan);
+  background:rgba(0,240,255,0.06);
+  border-left-color:var(--cyan);
+}
+.nav-back{
+  display:inline-block;
+  margin-top:20px;
+  padding:8px 14px;
+  font-family:'DotGothic16',monospace;
+  font-size:12px;
+  color:var(--green);
+  border:1px solid rgba(57,255,20,0.2);
+  border-radius:3px;
+  text-decoration:none;
+  transition:all 0.15s;
+}
+.nav-back:hover{
+  background:rgba(57,255,20,0.08);
+  box-shadow:0 0 10px rgba(57,255,20,0.1);
+}
+
+/* === MAIN === */
+.main{
+  margin-left:260px;
+  max-width:820px;
+  padding:48px 52px 120px;
+}
+
+/* === HERO === */
+.hero{
+  margin-bottom:56px;
+  padding-bottom:40px;
+  border-bottom:1px solid var(--border);
+}
+.hero-badge{
+  display:inline-block;
+  font-family:'Press Start 2P',monospace;
+  font-size:8px;
+  color:var(--pink);
+  background:rgba(255,45,107,0.08);
+  border:1px solid rgba(255,45,107,0.2);
+  padding:4px 10px;
+  border-radius:2px;
+  letter-spacing:1px;
+  margin-bottom:16px;
+}
+.hero h1{
+  font-family:'Noto Sans JP','DotGothic16',sans-serif;
+  font-size:32px;
+  font-weight:700;
+  color:var(--text-bright);
+  line-height:1.3;
+  margin-bottom:12px;
+}
+.hero h1 em{
+  font-style:normal;
+  color:var(--cyan);
+  text-shadow:0 0 20px rgba(0,240,255,0.2);
+}
+.hero-desc{
+  font-size:15px;
+  color:var(--text-dim);
+  max-width:600px;
+  line-height:1.8;
+}
+
+/* === SECTIONS === */
+.section{
+  margin-bottom:56px;
+  scroll-margin-top:24px;
+}
+h2{
+  font-family:'DotGothic16','Noto Sans JP',monospace;
+  font-size:20px;
+  color:var(--amber);
+  text-shadow:0 0 10px rgba(255,184,48,0.15);
+  margin-bottom:20px;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(255,184,48,0.1);
+  letter-spacing:1px;
+}
+h2 .num{
+  font-family:'Press Start 2P',monospace;
+  font-size:11px;
+  color:var(--text-dim);
+  margin-right:10px;
+}
+h3{
+  font-size:16px;
+  font-weight:700;
+  color:var(--text-bright);
+  margin:28px 0 12px;
+}
+h3 .icon{margin-right:6px;font-size:15px}
+p{margin-bottom:14px}
+strong{color:var(--text-bright);font-weight:500}
+
+/* Callout boxes */
+.callout{
+  padding:16px 20px;
+  border-radius:4px;
+  margin:18px 0;
+  font-size:14px;
+  line-height:1.75;
+}
+.callout-cyan{
+  background:rgba(0,240,255,0.04);
+  border:1px solid rgba(0,240,255,0.12);
+  border-left:3px solid var(--cyan);
+}
+.callout-amber{
+  background:rgba(255,184,48,0.04);
+  border:1px solid rgba(255,184,48,0.1);
+  border-left:3px solid var(--amber);
+}
+.callout-pink{
+  background:rgba(255,45,107,0.04);
+  border:1px solid rgba(255,45,107,0.1);
+  border-left:3px solid var(--pink);
+}
+.callout-purple{
+  background:rgba(177,78,255,0.04);
+  border:1px solid rgba(177,78,255,0.1);
+  border-left:3px solid var(--purple);
+}
+.callout-green{
+  background:rgba(57,255,20,0.03);
+  border:1px solid rgba(57,255,20,0.1);
+  border-left:3px solid var(--green);
+}
+.callout-label{
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+.callout-cyan .callout-label{color:var(--cyan)}
+.callout-amber .callout-label{color:var(--amber)}
+.callout-pink .callout-label{color:var(--pink)}
+.callout-purple .callout-label{color:var(--purple)}
+.callout-green .callout-label{color:var(--green)}
+
+/* Code */
+code{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;
+  background:var(--code-bg);
+  padding:2px 7px;
+  border-radius:3px;
+  border:1px solid var(--border);
+  color:var(--cyan);
+}
+pre{
+  background:var(--code-bg);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:18px 22px;
+  overflow-x:auto;
+  margin:16px 0;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;
+  line-height:1.65;
+  color:var(--text);
+}
+pre .comment{color:var(--text-dim)}
+pre .keyword{color:var(--pink)}
+pre .func{color:var(--cyan)}
+pre .string{color:var(--green)}
+pre .number{color:var(--amber)}
+pre .op{color:var(--purple)}
+
+/* Diagram */
+.diagram{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:28px 24px;
+  margin:20px 0;
+  text-align:center;
+  overflow-x:auto;
+}
+.diagram canvas{
+  display:block;
+  margin:0 auto;
+}
+
+.nn-flow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  flex-wrap:wrap;
+  padding:10px 0;
+}
+.nn-layer{
+  text-align:center;
+  padding:14px 18px;
+  border-radius:4px;
+  min-width:110px;
+}
+.nn-layer-name{
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+.nn-layer-size{
+  font-family:'Press Start 2P',monospace;
+  font-size:14px;
+  margin-bottom:4px;
+}
+.nn-layer-desc{
+  font-size:10px;
+  color:var(--text-dim);
+}
+.nn-arrow{
+  font-size:22px;
+  color:var(--text-dim);
+  padding:0 6px;
+}
+.nn-input{background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.15)}
+.nn-input .nn-layer-name{color:var(--cyan)}
+.nn-input .nn-layer-size{color:var(--cyan)}
+.nn-hidden{background:rgba(177,78,255,0.06);border:1px solid rgba(177,78,255,0.15)}
+.nn-hidden .nn-layer-name{color:var(--purple)}
+.nn-hidden .nn-layer-size{color:var(--purple)}
+.nn-act{background:rgba(255,45,107,0.06);border:1px solid rgba(255,45,107,0.15);min-width:80px}
+.nn-act .nn-layer-name{color:var(--pink)}
+.nn-act .nn-layer-size{color:var(--pink)}
+.nn-output{background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.15)}
+.nn-output .nn-layer-name{color:var(--green)}
+.nn-output .nn-layer-size{color:var(--green)}
+
+/* Table */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  font-size:13.5px;
+}
+th{
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  color:var(--amber);
+  letter-spacing:1px;
+  text-align:left;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border-light);
+  background:var(--surface);
+}
+td{
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+tr:hover td{background:rgba(255,255,255,0.01)}
+
+/* Math blocks */
+.math{
+  display:block;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:16px 22px;
+  margin:16px 0;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:14px;
+  text-align:center;
+  color:var(--text-bright);
+  letter-spacing:0.5px;
+  line-height:2;
+  overflow-x:auto;
+}
+.math .var{color:var(--cyan);font-style:italic}
+.math .op{color:var(--text-dim)}
+.math .highlight{color:var(--amber)}
+
+/* Grid visualization */
+.grid-demo{
+  display:inline-grid;
+  grid-template-columns:repeat(15,24px);
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:1px;
+}
+.grid-cell{
+  width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;
+}
+.grid-wall{background:#14142a}
+.grid-floor{background:#1a1a30}
+.grid-agent{background:rgba(57,255,20,0.15);font-size:14px}
+.grid-cheese{background:rgba(255,184,48,0.15);font-size:14px}
+.grid-reward-pos{background:rgba(255,184,48,0.08);border:1px dashed rgba(255,184,48,0.3)}
+
+/* Step flow diagram */
+.flow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin:20px 0;
+}
+.flow-step{
+  flex:1;
+  min-width:140px;
+  padding:14px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:4px;
+  position:relative;
+}
+.flow-num{
+  font-family:'Press Start 2P',monospace;
+  font-size:9px;
+  color:var(--cyan);
+  margin-bottom:6px;
+}
+.flow-text{
+  font-size:12.5px;
+  color:var(--text);
+  line-height:1.6;
+}
+
+/* Responsive */
+@media(max-width:800px){
+  .nav{display:none}
+  .main{margin-left:0;padding:24px 20px 80px}
+  .grid-demo{grid-template-columns:repeat(15,18px)}
+  .grid-cell{width:18px;height:18px;font-size:9px}
+  .nn-flow{gap:4px}
+  .nn-layer{min-width:80px;padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-title">DOCS</div>
+  <div class="nav-sub">ネズミ vs チーズ 強化学習ラボ</div>
+
+  <div class="nav-section">基礎理論</div>
+  <a href="#overview">全体概要</a>
+  <a href="#rl-basics">強化学習とは</a>
+  <a href="#policy-gradient">方策勾配法</a>
+
+  <div class="nav-section">システム設計</div>
+  <a href="#environment">環境: グリッドワールド</a>
+  <a href="#state">状態表現</a>
+  <a href="#network">ニューラルネットワーク</a>
+  <a href="#forward">順伝播</a>
+
+  <div class="nav-section">学習アルゴリズム</div>
+  <a href="#action">行動選択</a>
+  <a href="#reward">報酬設計</a>
+  <a href="#discount">割引報酬</a>
+  <a href="#backward">逆伝播と勾配</a>
+  <a href="#optimizer">RMSPropオプティマイザ</a>
+
+  <div class="nav-section">チューニング</div>
+  <a href="#hyperparams">ハイパーパラメータ</a>
+  <a href="#presets">プリセット解説</a>
+  <a href="#tips">チューニングのコツ</a>
+
+  <a href="index.html" class="nav-back">< ゲームに戻る</a>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">DOCUMENTATION v1.0</div>
+  <h1>ネズミが<em>チーズ</em>を見つける<br>強化学習の原理</h1>
+  <p class="hero-desc">
+    このドキュメントでは、「ネズミ vs チーズ」ゲームに実装されている強化学習アルゴリズムの
+    すべてを、数学的背景から実装の詳細まで段階的に解説します。
+  </p>
+</div>
+
+<!-- 1. Overview -->
+<div class="section" id="overview">
+  <h2><span class="num">01</span>全体概要</h2>
+  <p>
+    このプロジェクトは、<strong>方策勾配法（Policy Gradient）</strong>と呼ばれる強化学習アルゴリズムを使い、
+    15x15のグリッドワールド迷路の中で、ネズミ（エージェント）がチーズ（報酬）を見つけることを学習するシミュレーションです。
+  </p>
+
+  <div class="callout callout-cyan">
+    <div class="callout-label">KEY IDEA</div>
+    ネズミは最初、どちらに進めばいいか全く分かりません。ランダムに動き回り、偶然チーズを見つけた経験から
+    「この状況ではこの方向に動くと良い結果になりやすい」というパターンをニューラルネットワークで学習していきます。
+  </div>
+
+  <h3>システムの構成要素</h3>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">01</div>
+      <div class="flow-text"><strong>環境</strong><br>15x15の迷路。壁と通路がある。チーズは4箇所を巡回</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">02</div>
+      <div class="flow-text"><strong>エージェント</strong><br>ネズミ。上下左右の4方向に移動可能</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">03</div>
+      <div class="flow-text"><strong>方策ネットワーク</strong><br>現在の状態から行動確率を出力するニューラルネット</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">04</div>
+      <div class="flow-text"><strong>学習ループ</strong><br>経験を蓄積し、報酬に基づいてネットワークを更新</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. RL Basics -->
+<div class="section" id="rl-basics">
+  <h2><span class="num">02</span>強化学習とは</h2>
+  <p>
+    強化学習（Reinforcement Learning）は、<strong>エージェント</strong>が<strong>環境</strong>と相互作用しながら、
+    得られる<strong>報酬</strong>を最大化する行動方針（<strong>方策</strong>）を学習するフレームワークです。
+  </p>
+
+  <h3><span class="icon">🔁</span>学習サイクル</h3>
+  <p>毎ステップで以下のサイクルが繰り返されます:</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">STATE</div>
+      <div class="flow-text">エージェントが環境の現在の<strong>状態 s</strong> を観測する</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">ACTION</div>
+      <div class="flow-text">方策 <code>π(a|s)</code> に従って<strong>行動 a</strong> を選択する</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">REWARD</div>
+      <div class="flow-text">環境が<strong>報酬 r</strong> と次の状態 <strong>s'</strong> を返す</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">LEARN</div>
+      <div class="flow-text">得られた経験に基づいて方策を改善する</div>
+    </div>
+  </div>
+
+  <div class="callout callout-purple">
+    <div class="callout-label">VALUE-BASED VS POLICY-BASED</div>
+    強化学習には大きく分けて<strong>価値ベース</strong>（Q学習など: 各状態-行動の価値を推定）と
+    <strong>方策ベース</strong>（方策勾配法: 行動確率を直接学習）の2つのアプローチがあります。
+    このプロジェクトでは<strong>方策ベース</strong>を採用しています。
+  </div>
+</div>
+
+<!-- 3. Policy Gradient -->
+<div class="section" id="policy-gradient">
+  <h2><span class="num">03</span>方策勾配法 (Policy Gradient)</h2>
+  <p>
+    方策勾配法は、ニューラルネットワークが直接「各状態でどの行動をどのくらいの確率で選ぶか」を出力し、
+    良い結果につながった行動の確率を上げ、悪い結果につながった行動の確率を下げることで学習する手法です。
+  </p>
+
+  <h3><span class="icon">📐</span>REINFORCE アルゴリズム</h3>
+  <p>本プロジェクトで使用している手法はREINFORCEアルゴリズムの変種です。核心となる更新式は:</p>
+
+  <div class="math">
+    <span class="var">∇J(θ)</span> <span class="op">=</span>
+    <span class="highlight">E</span><span class="op">[</span>
+    <span class="var">∇ log π<sub>θ</sub>(a|s)</span>
+    <span class="op">・</span>
+    <span class="highlight">G<sub>t</sub></span>
+    <span class="op">]</span>
+  </div>
+
+  <table>
+    <tr><th>記号</th><th>意味</th><th>このプロジェクトでは</th></tr>
+    <tr>
+      <td><code>θ</code></td>
+      <td>ネットワークのパラメータ（重み）</td>
+      <td>W1 (225x200) と W2 (200x4) の重み行列</td>
+    </tr>
+    <tr>
+      <td><code>π<sub>θ</sub>(a|s)</code></td>
+      <td>方策: 状態sでの行動aの確率</td>
+      <td>Softmax出力の4方向の確率分布</td>
+    </tr>
+    <tr>
+      <td><code>G<sub>t</sub></code></td>
+      <td>割引累積報酬（リターン）</td>
+      <td>γ=0.98で割引された将来報酬の合計</td>
+    </tr>
+    <tr>
+      <td><code>∇ log π</code></td>
+      <td>方策の対数確率の勾配</td>
+      <td><code>y - aprob</code> (選んだ行動の1-hot - 現在の確率)</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-green">
+    <div class="callout-label">直感的な理解</div>
+    <strong>良い結果（G<sub>t</sub>が大きい）につながった行動</strong>の確率を上げ、
+    <strong>悪い結果（G<sub>t</sub>が小さい/負の）につながった行動</strong>の確率を下げる。
+    この更新を何千回と繰り返すことで、ネズミは迷路の中で最適な経路を学習します。
+  </div>
+</div>
+
+<!-- 4. Environment -->
+<div class="section" id="environment">
+  <h2><span class="num">04</span>環境: グリッドワールド</h2>
+  <p>
+    ネズミが活動する環境は <strong>15x15 = 225マス</strong> のグリッドワールドです。
+    壁（通行不可）と通路（移動可能）で構成された迷路構造になっています。
+  </p>
+
+  <h3><span class="icon">🗺</span>マップ構造</h3>
+  <div class="diagram">
+    <div class="grid-demo" id="gridMap"></div>
+  </div>
+
+  <h3><span class="icon">🧀</span>チーズの巡回</h3>
+  <p>
+    チーズは<strong>4つの固定位置</strong>を順番に巡回します。ネズミがチーズに到達すると、
+    チーズは次の位置に移動します。
+  </p>
+  <table>
+    <tr><th>順番</th><th>座標</th><th>位置</th></tr>
+    <tr><td>1</td><td><code>[2, 2]</code></td><td>左上エリア</td></tr>
+    <tr><td>2</td><td><code>[2, 12]</code></td><td>左下エリア</td></tr>
+    <tr><td>3</td><td><code>[12, 2]</code></td><td>右上エリア</td></tr>
+    <tr><td>4</td><td><code>[12, 12]</code></td><td>右下エリア</td></tr>
+  </table>
+
+  <h3><span class="icon">🎮</span>行動空間</h3>
+  <table>
+    <tr><th>行動ID</th><th>方向</th><th>座標変化</th></tr>
+    <tr><td><code>0</code></td><td>↓ 下</td><td>[0, +1]</td></tr>
+    <tr><td><code>1</code></td><td>↑ 上</td><td>[0, -1]</td></tr>
+    <tr><td><code>2</code></td><td>→ 右</td><td>[+1, 0]</td></tr>
+    <tr><td><code>3</code></td><td>← 左</td><td>[-1, 0]</td></tr>
+  </table>
+
+  <div class="callout callout-amber">
+    <div class="callout-label">壁との衝突</div>
+    ネズミが壁に向かって移動しようとした場合、位置は変わりません。
+    これはペナルティにはなりませんが、距離ベースの報酬シェーピングにより
+    実質的に<code>-1</code>の報酬を受け取ります（チーズに近づけなかったため）。
+  </div>
+
+  <h3><span class="icon">⏱</span>エピソード</h3>
+  <p>
+    <strong>1エピソード = 1000ステップ</strong>です。エピソード終了時に環境がリセットされ、
+    ネズミは初期位置 <code>[1, 1]</code> に戻ります。
+    1000ステップの中で何個のチーズを獲得できたかがエージェントの性能を示します。
+  </p>
+</div>
+
+<!-- 5. State Encoding -->
+<div class="section" id="state">
+  <h2><span class="num">05</span>状態表現</h2>
+  <p>
+    ネットワークへの入力は、<strong>225次元のバイナリベクトル</strong>です。
+    15x15のグリッドを1次元に展開し、2つの位置に「1」を立てた<strong>2-hotエンコーディング</strong>を使用します。
+  </p>
+
+  <pre><span class="comment">// 225次元のゼロベクトルを作成</span>
+<span class="keyword">const</span> x = <span class="keyword">new</span> <span class="func">Float64Array</span>(<span class="number">225</span>);
+
+<span class="comment">// ネズミの位置をエンコード</span>
+x[agentPos[<span class="number">1</span>] <span class="op">*</span> <span class="number">15</span> <span class="op">+</span> agentPos[<span class="number">0</span>]] = <span class="number">1</span>;
+
+<span class="comment">// チーズの位置をエンコード</span>
+x[cheesePos[<span class="number">1</span>] <span class="op">*</span> <span class="number">15</span> <span class="op">+</span> cheesePos[<span class="number">0</span>]] = <span class="number">1</span>;</pre>
+
+  <div class="callout callout-cyan">
+    <div class="callout-label">なぜこの表現？</div>
+    各マスが独立した特徴量として扱われるため、ネットワークは位置の関係性を重みから学習する必要があります。
+    座標値をそのまま入力する方法もありますが、グリッドの各マスに意味がある離散環境では、
+    one-hot系のエンコーディングが直感的で学習が安定します。
+  </div>
+</div>
+
+<!-- 6. Neural Network -->
+<div class="section" id="network">
+  <h2><span class="num">06</span>ニューラルネットワーク</h2>
+  <p>
+    方策ネットワークは<strong>2層の全結合ニューラルネットワーク</strong>です。
+    状態ベクトルを入力として受け取り、4つの行動それぞれの確率を出力します。
+  </p>
+
+  <h3><span class="icon">🏗</span>アーキテクチャ</h3>
+  <div class="diagram">
+    <div class="nn-flow">
+      <div class="nn-layer nn-input">
+        <div class="nn-layer-name">INPUT</div>
+        <div class="nn-layer-size">225</div>
+        <div class="nn-layer-desc">状態ベクトル</div>
+      </div>
+      <div class="nn-arrow">→</div>
+      <div class="nn-layer nn-hidden">
+        <div class="nn-layer-name">W1</div>
+        <div class="nn-layer-size">225 x 200</div>
+        <div class="nn-layer-desc">全結合層</div>
+      </div>
+      <div class="nn-arrow">→</div>
+      <div class="nn-layer nn-act">
+        <div class="nn-layer-name">ReLU</div>
+        <div class="nn-layer-size">200</div>
+        <div class="nn-layer-desc">活性化</div>
+      </div>
+      <div class="nn-arrow">→</div>
+      <div class="nn-layer nn-hidden">
+        <div class="nn-layer-name">W2</div>
+        <div class="nn-layer-size">200 x 4</div>
+        <div class="nn-layer-desc">全結合層</div>
+      </div>
+      <div class="nn-arrow">→</div>
+      <div class="nn-layer nn-act">
+        <div class="nn-layer-name">Softmax</div>
+        <div class="nn-layer-size">4</div>
+        <div class="nn-layer-desc">確率化</div>
+      </div>
+      <div class="nn-arrow">→</div>
+      <div class="nn-layer nn-output">
+        <div class="nn-layer-name">OUTPUT</div>
+        <div class="nn-layer-size">π(a|s)</div>
+        <div class="nn-layer-desc">行動確率</div>
+      </div>
+    </div>
+  </div>
+
+  <h3><span class="icon">🎲</span>重みの初期化</h3>
+  <p><strong>Xavier初期化</strong>（変種）を使用しています。各重みを入力ユニット数の平方根で割ることで、
+  信号の分散が層を通じて一定に保たれます。</p>
+
+  <div class="math">
+    <span class="var">W1[i][j]</span> <span class="op">~</span>
+    <span class="highlight">N(0, 1)</span> <span class="op">/</span> <span class="var">√225</span>
+    <span class="op">&nbsp;&nbsp;,&nbsp;&nbsp;</span>
+    <span class="var">W2[i][j]</span> <span class="op">~</span>
+    <span class="highlight">N(0, 1)</span> <span class="op">/</span> <span class="var">√200</span>
+  </div>
+
+  <p>
+    合計パラメータ数: <code>225 x 200 + 200 x 4 = <strong>45,800</strong></code> 個の学習可能な重み。
+    隠れ層サイズを変更すると、このパラメータ数も変化します。
+  </p>
+</div>
+
+<!-- 7. Forward Pass -->
+<div class="section" id="forward">
+  <h2><span class="num">07</span>順伝播 (Forward Pass)</h2>
+  <p>入力状態ベクトルからの行動確率の計算は、3つのステップで行われます。</p>
+
+  <h3>Step 1: 隠れ層の計算</h3>
+  <div class="math">
+    <span class="var">h</span> <span class="op">=</span>
+    <span class="var">x</span> <span class="op">@</span> <span class="var">W1</span>
+    <span class="op">&nbsp;&nbsp;&nbsp;→&nbsp;&nbsp;&nbsp;</span>
+    (1 x 225) <span class="op">@</span> (225 x 200) <span class="op">=</span> (1 x 200)
+  </div>
+
+  <h3>Step 2: ReLU活性化</h3>
+  <div class="math">
+    <span class="var">h</span> <span class="op">=</span>
+    <span class="func">max</span>(<span class="number">0</span>, <span class="var">h</span>)
+  </div>
+
+  <div class="callout callout-pink">
+    <div class="callout-label">ReLU (Rectified Linear Unit)</div>
+    負の値を0に、正の値はそのまま通す非線形関数。計算が単純で勾配消失が起きにくいため、
+    ニューラルネットワークで最も広く使われている活性化関数です。
+    この非線形性がなければ、2層のネットワークは1層と同等になってしまいます。
+  </div>
+
+  <h3>Step 3: 出力層 + Softmax</h3>
+  <div class="math">
+    <span class="var">logits</span> <span class="op">=</span>
+    <span class="var">h</span> <span class="op">@</span> <span class="var">W2</span>
+    <span class="op">&nbsp;&nbsp;&nbsp;→&nbsp;&nbsp;&nbsp;</span>
+    <span class="var">π(a|s)</span> <span class="op">=</span>
+    <span class="func">softmax</span>(<span class="var">logits</span>)
+  </div>
+
+  <pre><span class="comment">// Softmax: logitsを確率分布に変換</span>
+<span class="keyword">function</span> <span class="func">softmax</span>(logits) {
+  <span class="keyword">const</span> max = <span class="func">Math.max</span>(...logits);   <span class="comment">// オーバーフロー防止</span>
+  <span class="keyword">const</span> exp = logits.<span class="func">map</span>(x => <span class="func">Math.exp</span>(x - max));
+  <span class="keyword">const</span> sum = exp.<span class="func">reduce</span>((a, b) => a + b);
+  <span class="keyword">return</span> exp.<span class="func">map</span>(x => x / sum);       <span class="comment">// 合計が1の確率分布</span>
+}</pre>
+
+  <p>
+    出力例: <code>[0.15, 0.40, 0.35, 0.10]</code> = 下15%, 上40%, 右35%, 左10%。
+    ネズミは上に動く確率が最も高く、次に右に動きやすい状態です。
+  </p>
+</div>
+
+<!-- 8. Action Selection -->
+<div class="section" id="action">
+  <h2><span class="num">08</span>行動選択: ε-greedy</h2>
+  <p>
+    行動はネットワークの出力確率に従って選択されますが、
+    一定確率 <strong>ε (epsilon)</strong> でランダムな行動を取ります。
+  </p>
+
+  <pre><span class="keyword">if</span> (<span class="func">Math.random</span>() < epsilon) {
+  <span class="comment">// 探索: ε の確率でランダム行動</span>
+  action = <span class="func">randomChoice</span>([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);
+} <span class="keyword">else</span> {
+  <span class="comment">// 活用: ネットワークの確率分布からサンプリング</span>
+  action = <span class="func">weightedSample</span>(actionProbabilities);
+}</pre>
+
+  <h3><span class="icon">⚖</span>探索と活用のジレンマ</h3>
+  <div class="callout callout-purple">
+    <div class="callout-label">EXPLORATION VS EXPLOITATION</div>
+    <strong>活用（Exploitation）</strong>: 現在の知識に基づいて最善と思われる行動を選ぶ。<br>
+    <strong>探索（Exploration）</strong>: まだ試していない行動を取り、新しい情報を得る。<br><br>
+    εが高い（例: 0.2）と、多くの経路を試すため<strong>局所解を脱出しやすい</strong>が、学習したことを活かせない時間が増える。
+    εが低い（例: 0.02）と、<strong>効率的に動ける</strong>が、もっと良い経路を見逃す可能性がある。
+  </div>
+
+  <h3><span class="icon">📝</span>方策勾配の記録</h3>
+  <p>各ステップで、選択した行動の「ログ確率の勾配」を記録します:</p>
+
+  <div class="math">
+    <span class="var">dlog π</span> <span class="op">=</span>
+    <span class="var">y</span> <span class="op">-</span> <span class="var">π(a|s)</span>
+    <span class="op">&nbsp;&nbsp;&nbsp;where&nbsp;&nbsp;&nbsp;</span>
+    <span class="var">y</span> <span class="op">=</span> [0, 0, 1, 0] <span class="comment">（選んだ行動が「右」の場合）</span>
+  </div>
+
+  <p>
+    例えば確率 <code>[0.15, 0.40, 0.35, 0.10]</code> で「右（index=2）」を選んだ場合:
+  </p>
+  <pre>dlogp = [<span class="number">0</span>-<span class="number">0.15</span>, <span class="number">0</span>-<span class="number">0.40</span>, <span class="number">1</span>-<span class="number">0.35</span>, <span class="number">0</span>-<span class="number">0.10</span>]
+     = [<span class="number">-0.15</span>,  <span class="number">-0.40</span>,  <span class="number">+0.65</span>,  <span class="number">-0.10</span>]</pre>
+  <p>
+    これは「右を選んだので右の確率を上げ、他を下げる方向」を示します。
+    この勾配が後で<strong>報酬の大きさで重み付け</strong>されることで、良い行動が強化されます。
+  </p>
+</div>
+
+<!-- 9. Reward Design -->
+<div class="section" id="reward">
+  <h2><span class="num">09</span>報酬設計 (Reward Shaping)</h2>
+  <p>
+    報酬の設計は強化学習の性能を大きく左右します。このプロジェクトでは
+    2種類の報酬を組み合わせています。
+  </p>
+
+  <h3><span class="icon">🧀</span>到達報酬（スパース報酬）</h3>
+  <table>
+    <tr><th>イベント</th><th>報酬</th></tr>
+    <tr><td>チーズに到達</td><td><code>+1.0</code></td></tr>
+    <tr><td>それ以外</td><td><code> 0.0</code></td></tr>
+  </table>
+
+  <div class="callout callout-pink">
+    <div class="callout-label">スパース報酬の問題</div>
+    チーズに到達したときだけ報酬が出る場合、ランダムに動くネズミがチーズに辿り着く確率は非常に低く、
+    学習の初期段階で有用な勾配をほとんど得られません。これが<strong>スパース報酬問題</strong>です。
+  </div>
+
+  <h3><span class="icon">📏</span>距離ベースの報酬シェーピング</h3>
+  <p>スパース報酬問題を緩和するため、<strong>マンハッタン距離</strong>に基づく追加報酬を設計しています:</p>
+
+  <pre><span class="comment">// 前ステップと現ステップのチーズまでの距離</span>
+prevDist = |cheese.x - prev.x| + |cheese.y - prev.y|
+currDist = |cheese.x - curr.x| + |cheese.y - curr.y|
+
+<span class="keyword">if</span> (prevDist > currDist)
+  reward += <span class="number">+1</span>    <span class="comment">// チーズに近づいた</span>
+<span class="keyword">else</span>
+  reward += <span class="number">-1</span>    <span class="comment">// チーズから遠ざかった（or 動けなかった）</span></pre>
+
+  <h3><span class="icon">📊</span>報酬の合計パターン</h3>
+  <table>
+    <tr><th>行動の結果</th><th>環境報酬</th><th>距離報酬</th><th>合計</th></tr>
+    <tr><td>チーズに到達</td><td>+1</td><td>+1</td><td><strong>+2</strong></td></tr>
+    <tr><td>チーズに近づいた</td><td>0</td><td>+1</td><td><strong>+1</strong></td></tr>
+    <tr><td>チーズから遠ざかった</td><td>0</td><td>-1</td><td><strong>-1</strong></td></tr>
+    <tr><td>壁にぶつかった</td><td>0</td><td>-1</td><td><strong>-1</strong></td></tr>
+  </table>
+
+  <div class="callout callout-green">
+    <div class="callout-label">報酬シェーピングの効果</div>
+    距離ベースの報酬により、ネズミは初期段階からすぐに「チーズに向かう」という基本的な行動を学習できます。
+    ただし、壁を迂回する必要がある場合、一時的に遠ざかる行動が最適な場合もあるため、
+    報酬シェーピングが必ずしも最適解に導くとは限りません。
+  </div>
+</div>
+
+<!-- 10. Discount Rewards -->
+<div class="section" id="discount">
+  <h2><span class="num">10</span>割引報酬 (Discounted Rewards)</h2>
+  <p>
+    エピソード終了後、各ステップの「将来を含めた累積報酬」を計算します。
+    未来の報酬は<strong>割引率 γ (gamma)</strong> で指数的に減衰させます。
+  </p>
+
+  <div class="math">
+    <span class="var">G<sub>t</sub></span> <span class="op">=</span>
+    <span class="var">r<sub>t</sub></span> <span class="op">+</span>
+    <span class="highlight">γ</span> <span class="var">r<sub>t+1</sub></span> <span class="op">+</span>
+    <span class="highlight">γ<sup>2</sup></span> <span class="var">r<sub>t+2</sub></span> <span class="op">+</span>
+    <span class="highlight">γ<sup>3</sup></span> <span class="var">r<sub>t+3</sub></span> <span class="op">+ ...</span>
+  </div>
+
+  <pre><span class="comment">// 末尾から逆順に累積（効率的な計算）</span>
+<span class="keyword">let</span> running = <span class="number">0</span>;
+<span class="keyword">for</span> (<span class="keyword">let</span> t = rewards.length - <span class="number">1</span>; t >= <span class="number">0</span>; t--) {
+  running = running <span class="op">*</span> gamma <span class="op">+</span> rewards[t];
+  discounted[t] = running;
+}</pre>
+
+  <h3><span class="icon">🔍</span>γ の影響</h3>
+  <table>
+    <tr><th>γ の値</th><th>100ステップ先の重み</th><th>性質</th></tr>
+    <tr><td><code>0.90</code></td><td>0.90<sup>100</sup> = 0.00003</td><td>近視眼的。目の前の報酬を重視</td></tr>
+    <tr><td><code>0.95</code></td><td>0.95<sup>100</sup> = 0.006</td><td>やや短期的</td></tr>
+    <tr><td><code>0.98</code></td><td>0.98<sup>100</sup> = 0.133</td><td>バランス型（デフォルト）</td></tr>
+    <tr><td><code>0.99</code></td><td>0.99<sup>100</sup> = 0.366</td><td>長期的。遠い未来も考慮</td></tr>
+    <tr><td><code>0.999</code></td><td>0.999<sup>100</sup> = 0.905</td><td>超長期的。分散が大きくなりがち</td></tr>
+  </table>
+
+  <h3><span class="icon">📐</span>標準化（Advantage推定）</h3>
+  <p>割引報酬を正規化して分散を安定させます:</p>
+
+  <div class="math">
+    <span class="var">A<sub>t</sub></span> <span class="op">=</span>
+    (<span class="var">G<sub>t</sub></span> <span class="op">-</span> <span class="highlight">mean(G)</span>)
+    <span class="op">/</span>
+    <span class="highlight">std(G)</span>
+  </div>
+
+  <div class="callout callout-cyan">
+    <div class="callout-label">なぜ標準化するのか</div>
+    平均を引くことで、「平均より良かった行動」はプラスの勾配、「平均より悪かった行動」はマイナスの勾配になります。
+    これにより全報酬が正の場合でも適切に良い行動と悪い行動を区別でき、学習が安定します。
+    これが<strong>Advantage（アドバンテージ）</strong>と呼ばれる考え方です。
+  </div>
+</div>
+
+<!-- 11. Backward Pass -->
+<div class="section" id="backward">
+  <h2><span class="num">11</span>逆伝播と勾配計算</h2>
+  <p>
+    エピソード終了後、蓄積した各ステップのデータを使って、ネットワークの重みの勾配を計算します。
+    これが逆伝播（Backpropagation）のプロセスです。
+  </p>
+
+  <h3><span class="icon">📉</span>勾配計算の流れ</h3>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">01</div>
+      <div class="flow-text"><strong>報酬の処理</strong><br>割引報酬を計算し、標準化してAdvantageを得る</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">02</div>
+      <div class="flow-text"><strong>勾配のスケーリング</strong><br>各ステップのdlogpにAdvantageを掛ける</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">03</div>
+      <div class="flow-text"><strong>W2の勾配</strong><br>隠れ層の出力と方策勾配から計算</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">04</div>
+      <div class="flow-text"><strong>W1の勾配</strong><br>誤差を逆伝播し、ReLUマスクを適用</div>
+    </div>
+  </div>
+
+  <h3><span class="icon">🔧</span>W2 の勾配</h3>
+  <div class="math">
+    <span class="var">∇W2</span> <span class="op">+=</span>
+    <span class="var">h<sup>T</sup></span> <span class="op">@</span>
+    (<span class="var">dlogp</span> <span class="op">*</span> <span class="var">A<sub>t</sub></span>)
+  </div>
+  <p>隠れ層の出力 <code>h</code> (200次元) と、Advantageでスケールされた方策勾配 (4次元) の外積を累積します。</p>
+
+  <h3><span class="icon">🔧</span>誤差の逆伝播とW1の勾配</h3>
+  <div class="math">
+    <span class="var">δh</span> <span class="op">=</span>
+    (<span class="var">dlogp</span> <span class="op">*</span> <span class="var">A<sub>t</sub></span>)
+    <span class="op">@</span> <span class="var">W2<sup>T</sup></span>
+    <span class="op">&nbsp;&nbsp;⊙&nbsp;&nbsp;</span>
+    <span class="func">ReLU'</span>(<span class="var">h</span>)
+  </div>
+
+  <div class="math">
+    <span class="var">∇W1</span> <span class="op">+=</span>
+    <span class="var">x<sup>T</sup></span> <span class="op">@</span>
+    <span class="var">δh</span>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-label">ReLUの勾配マスク</div>
+    ReLUの微分は非常に単純です: 順伝播時に<code>h[i] > 0</code>だった要素は勾配をそのまま通し、
+    <code>h[i] <= 0</code>だった要素は勾配を0にします。これにより、活性化されなかったニューロンは
+    その時点での勾配更新に関与しません。
+  </div>
+
+  <pre><span class="comment">// ReLU マスク: 順伝播時にゼロだった要素の勾配をカット</span>
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < hiddenSize; i++) {
+  <span class="keyword">if</span> (hidden[i] <= <span class="number">0</span>) dhidden[i] = <span class="number">0</span>;
+}</pre>
+
+  <h3><span class="icon">📦</span>バッチ学習</h3>
+  <p>
+    勾配は複数のエピソードにわたって<strong>蓄積</strong>されます（デフォルト: 4エピソード）。
+    batch_sizeエピソード分の勾配が溜まったところで、まとめてパラメータを更新します。
+  </p>
+  <div class="callout callout-green">
+    <div class="callout-label">バッチの意味</div>
+    1エピソードの経験だけで更新すると、そのエピソード特有のノイズに影響されやすくなります。
+    複数エピソードの平均を取ることで、勾配推定のノイズが軽減され、学習がより安定します。
+  </div>
+</div>
+
+<!-- 12. Optimizer -->
+<div class="section" id="optimizer">
+  <h2><span class="num">12</span>RMSPropオプティマイザ</h2>
+  <p>
+    パラメータの更新にはRMSProp（Root Mean Square Propagation）を使用しています。
+    勾配の二乗の指数移動平均を追跡し、それを使って学習率を適応的に調整します。
+  </p>
+
+  <h3><span class="icon">📐</span>更新式</h3>
+  <div class="math">
+    <span class="var">v<sub>t</sub></span> <span class="op">=</span>
+    <span class="highlight">ρ</span> <span class="op">・</span> <span class="var">v<sub>t-1</sub></span>
+    <span class="op">+</span> (<span class="number">1</span> <span class="op">-</span> <span class="highlight">ρ</span>)
+    <span class="op">・</span> <span class="var">g<sub>t</sub><sup>2</sup></span>
+  </div>
+  <div class="math">
+    <span class="var">θ<sub>t+1</sub></span> <span class="op">=</span>
+    <span class="var">θ<sub>t</sub></span> <span class="op">+</span>
+    <span class="highlight">α</span>
+    <span class="op">・</span>
+    <span class="var">g<sub>t</sub></span> <span class="op">/</span>
+    (<span class="func">√</span><span class="var">v<sub>t</sub></span> <span class="op">+</span> <span class="number">10<sup>-5</sup></span>)
+  </div>
+
+  <table>
+    <tr><th>記号</th><th>意味</th><th>デフォルト値</th></tr>
+    <tr><td><code>ρ</code> (decay_rate)</td><td>移動平均の減衰率</td><td>0.97</td></tr>
+    <tr><td><code>α</code> (lr)</td><td>学習率</td><td>0.0025</td></tr>
+    <tr><td><code>g<sub>t</sub></code></td><td>現在の勾配</td><td>--</td></tr>
+    <tr><td><code>v<sub>t</sub></code></td><td>勾配の二乗の移動平均</td><td>0から蓄積</td></tr>
+    <tr><td><code>10<sup>-5</sup></code></td><td>ゼロ除算防止の定数</td><td>--</td></tr>
+  </table>
+
+  <div class="callout callout-cyan">
+    <div class="callout-label">なぜ SGD ではなく RMSProp？</div>
+    通常のSGD（確率的勾配降下法）は全パラメータに同じ学習率を適用しますが、
+    RMSPropは各パラメータの勾配の大きさに応じて<strong>学習率を自動調整</strong>します。
+    勾配が大きいパラメータは小さいステップで、勾配が小さいパラメータは大きいステップで更新されます。
+    これにより、スパースな入力（2-hotベクトル）の環境でも安定した学習が可能になります。
+  </div>
+</div>
+
+<!-- 13. Hyperparameters -->
+<div class="section" id="hyperparams">
+  <h2><span class="num">13</span>ハイパーパラメータ詳解</h2>
+
+  <table>
+    <tr><th>パラメータ</th><th>範囲</th><th>デフォルト</th><th>影響</th></tr>
+    <tr>
+      <td><strong>学習率 (lr)</strong></td>
+      <td>0.0001 ~ 0.01</td>
+      <td>0.0025</td>
+      <td>更新のステップ幅。大=速いが不安定、小=遅いが安定</td>
+    </tr>
+    <tr>
+      <td><strong>割引率 (γ)</strong></td>
+      <td>0.90 ~ 0.999</td>
+      <td>0.98</td>
+      <td>未来の報酬の重み。大=長期的、小=短期的</td>
+    </tr>
+    <tr>
+      <td><strong>探索率 (ε)</strong></td>
+      <td>0.0 ~ 0.3</td>
+      <td>0.03</td>
+      <td>ランダム行動の割合。大=探索重視、小=活用重視</td>
+    </tr>
+    <tr>
+      <td><strong>バッチサイズ</strong></td>
+      <td>1 ~ 20</td>
+      <td>4</td>
+      <td>更新頻度。大=安定だが遅い、小=速いがノイジー</td>
+    </tr>
+    <tr>
+      <td><strong>隠れ層サイズ</strong></td>
+      <td>50 ~ 500</td>
+      <td>200</td>
+      <td>ネットワーク容量。大=表現力高いが過学習リスク</td>
+    </tr>
+    <tr>
+      <td><strong>減衰率 (ρ)</strong></td>
+      <td>固定</td>
+      <td>0.97</td>
+      <td>RMSPropの移動平均の滑らかさ</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 14. Presets -->
+<div class="section" id="presets">
+  <h2><span class="num">14</span>プリセット解説</h2>
+
+  <h3><span class="icon">⚡</span>ターボ学習 (FAST)</h3>
+  <table>
+    <tr><td>lr=<code>0.006</code></td><td>γ=<code>0.95</code></td><td>ε=<code>0.02</code></td><td>batch=<code>2</code></td><td>hidden=<code>200</code></td></tr>
+  </table>
+  <p>
+    <strong>設計思想:</strong> 高い学習率と小さなバッチサイズで、各エピソードから大きく学ぶ。
+    低いγにより近くの報酬に集中し、早期に「チーズに向かう」基本動作を習得する。
+    振動や発散のリスクがあるが、短時間で結果が出るため、素早い実験に向いている。
+  </p>
+
+  <h3><span class="icon">🏔</span>安定重視 (STABLE)</h3>
+  <table>
+    <tr><td>lr=<code>0.001</code></td><td>γ=<code>0.99</code></td><td>ε=<code>0.05</code></td><td>batch=<code>10</code></td><td>hidden=<code>200</code></td></tr>
+  </table>
+  <p>
+    <strong>設計思想:</strong> 低学習率+大バッチで勾配推定のノイズを最小化。
+    高いγで長期的な報酬パターンを学習し、適度なεで局所解を回避。
+    収束速度は遅いが報酬曲線が滑らかに上昇する。長期間の学習に適している。
+  </p>
+
+  <h3><span class="icon">🧠</span>大脳モデル (BEST)</h3>
+  <table>
+    <tr><td>lr=<code>0.003</code></td><td>γ=<code>0.995</code></td><td>ε=<code>0.03</code></td><td>batch=<code>4</code></td><td>hidden=<code>400</code></td></tr>
+  </table>
+  <p>
+    <strong>設計思想:</strong> 隠れ層400は標準の2倍の容量。
+    超高γ=0.995で数百ステップ先の報酬も重視するため、
+    壁を迂回するような複雑な長期戦略を学習できる可能性がある。
+    パラメータ数が多いため学習初期は遅いが、最終的な性能は最も高くなり得る。
+  </p>
+
+  <h3><span class="icon">🗺</span>冒険家 (EXPLORE)</h3>
+  <table>
+    <tr><td>lr=<code>0.003</code></td><td>γ=<code>0.98</code></td><td>ε=<code>0.20</code></td><td>batch=<code>6</code></td><td>hidden=<code>250</code></td></tr>
+  </table>
+  <p>
+    <strong>設計思想:</strong> ε=0.20は5ステップに1回ランダム行動ということ。
+    序盤のスコアは低くなるが、多様な経験を収集するため、
+    他のプリセットでは見つけられない良い経路パターンを発見する可能性がある。
+    局所解にハマった時のリスタートにも有効。
+  </p>
+
+  <h3><span class="icon">🐜</span>最小構成 (TINY)</h3>
+  <table>
+    <tr><td>lr=<code>0.004</code></td><td>γ=<code>0.96</code></td><td>ε=<code>0.04</code></td><td>batch=<code>3</code></td><td>hidden=<code>50</code></td></tr>
+  </table>
+  <p>
+    <strong>設計思想:</strong> わずか50ニューロンの隠れ層（パラメータ数: 11,450）。
+    ネットワークの容量が限られているため、複雑なパターンは学習できないが、
+    それでもチーズに近づく基本方策は学習可能。「小さなモデルでも学習できるのか？」を実験できる。
+  </p>
+
+  <h3><span class="icon">🎯</span>師範モード (PRO)</h3>
+  <table>
+    <tr><td>lr=<code>0.003</code></td><td>γ=<code>0.99</code></td><td>ε=<code>0.03</code></td><td>batch=<code>4</code></td><td>hidden=<code>300</code></td></tr>
+  </table>
+  <p>
+    <strong>設計思想:</strong> すべてのパラメータを最適なバランスに調整した構成。
+    適度な学習率、高めのγ、低い探索率、やや大きなネットワーク。
+    安定性とスコアの両方を追求した、最も実用的なプリセット。
+    迷ったらこれを選ぶのがおすすめ。
+  </p>
+</div>
+
+<!-- 15. Tips -->
+<div class="section" id="tips">
+  <h2><span class="num">15</span>チューニングのコツ</h2>
+
+  <div class="callout callout-green">
+    <div class="callout-label">STEP 1: まず観察する</div>
+    プリセット「師範モード」で20エピソード以上学習させ、報酬グラフの傾きを観察しましょう。
+    ヒートマップと方策表示をONにすると、ネズミが何を学んだかが視覚的に分かります。
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-label">STEP 2: 問題を特定する</div>
+    <strong>報酬が上がらない</strong> → 学習率を上げるか、探索率を上げてみる<br>
+    <strong>報酬が振動する</strong> → 学習率を下げるか、バッチサイズを増やす<br>
+    <strong>方策が偏りすぎ</strong> → 探索率を上げて多様な経験を収集する<br>
+    <strong>ゆっくりだが確実</strong> → 実行速度を上げて待つか、学習率を少し上げる
+  </div>
+
+  <div class="callout callout-purple">
+    <div class="callout-label">STEP 3: 一つずつ変える</div>
+    複数のパラメータを同時に変えると、どの変更が効果をもたらしたか分からなくなります。
+    一度に変更するパラメータは<strong>1つだけ</strong>にし、効果を確認してから次の調整に進みましょう。
+  </div>
+
+  <div class="callout callout-pink">
+    <div class="callout-label">よくある失敗パターン</div>
+    <strong>lr を 0.01 に設定</strong> → 勾配爆発で学習が完全に崩壊する<br>
+    <strong>ε を 0 に設定</strong> → 最初の方策に固定され一切改善しない<br>
+    <strong>γ を 0.999 + lr を高く</strong> → 分散が大きすぎて不安定に<br>
+    <strong>hidden を 500 + batch を 1</strong> → 巨大ネットの1エピソード更新はノイジー
+  </div>
+
+  <h3><span class="icon">🎓</span>学習の目安</h3>
+  <table>
+    <tr><th>段階</th><th>エピソード</th><th>期待される挙動</th></tr>
+    <tr><td>初期</td><td>1 ~ 5</td><td>ほぼランダム。たまに偶然チーズを取る</td></tr>
+    <tr><td>序盤</td><td>5 ~ 20</td><td>チーズの方向に動く傾向が見え始める</td></tr>
+    <tr><td>中盤</td><td>20 ~ 50</td><td>近くのチーズには効率的に到達できるように</td></tr>
+    <tr><td>熟練</td><td>50+</td><td>迂回路も含めた効率的な経路を学習</td></tr>
+  </table>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// Build grid visualization
+const MAP=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+const REWARDS=[[2,2],[2,12],[12,2],[12,12]];
+const grid=document.getElementById('gridMap');
+
+for(let y=0;y<15;y++){
+  for(let x=0;x<15;x++){
+    const cell=document.createElement('div');
+    cell.classList.add('grid-cell');
+    const isReward=REWARDS.some(r=>r[0]===x&&r[1]===y);
+    const isAgent=x===1&&y===1;
+    if(MAP[x+y*15]===1){
+      cell.classList.add('grid-wall');
+    }else if(isAgent){
+      cell.classList.add('grid-agent');
+      cell.textContent='🐭';
+    }else if(isReward){
+      cell.classList.add('grid-cheese');
+      cell.textContent='🧀';
+    }else{
+      cell.classList.add('grid-floor');
+    }
+    grid.appendChild(cell);
+  }
+}
+
+// Active nav link tracking
+const sections=document.querySelectorAll('.section');
+const navLinks=document.querySelectorAll('.nav a[href^="#"]');
+
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      navLinks.forEach(l=>l.classList.remove('active'));
+      const id=entry.target.id;
+      const link=document.querySelector(`.nav a[href="#${id}"]`);
+      if(link)link.classList.add('active');
+    }
+  });
+},{rootMargin:'-20% 0px -70% 0px'});
+
+sections.forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>
