@@ -1,6 +1,13 @@
 from pathlib import Path
 
 import pygame
+from PIL import Image
+
+
+def load_png(path):
+    """Pillow経由でPNG画像を読み込む（SDL_imageが無い環境用）"""
+    pil_img = Image.open(path).convert("RGBA")
+    return pygame.image.frombuffer(pil_img.tobytes(), pil_img.size, "RGBA")
 
 #ゲームの環境
 class grid_world:
@@ -27,10 +34,10 @@ class grid_world:
         # 画像のパスの読み込み
         #ネズミ=agent
         agent_img_path = Path('images/agent.png')
-        self.img_agent = pygame.image.load(agent_img_path)
+        self.img_agent = load_png(agent_img_path)
         #チーズ=reward
         reward_img_path = Path('images/cheese.png')
-        self.img_reward = pygame.image.load(reward_img_path)
+        self.img_reward = load_png(reward_img_path)
 
         # チーズとネズミの画像をgrid_sizeの大きさに合わせて読み込む
         self.img_agent = pygame.transform.smoothscale(self.img_agent, (self.grid_size, self.grid_size))
@@ -38,7 +45,7 @@ class grid_world:
 
         # 背景の画像を読みこむ
         chip_img_path = Path('images/chip.png')
-        self.img_bg = pygame.image.load(chip_img_path)
+        self.img_bg = load_png(chip_img_path)
 
         # ネズミとチーズの初期位置を設定
         self.agent_pos = [1, 1]
